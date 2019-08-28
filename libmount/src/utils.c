@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
+#include <poll.h>
 #include <blkid.h>
 
 #include "strutils.h"
@@ -1140,8 +1141,123 @@ done:
 	return 1;
 }
 
+/*
+ * This function tries to minimize possible races when we read
+ * /proc/#/{mountinfo,mount} files.
+ *
+ * The idea is to minimize number of read()s and check by poll() that during
+ * the read the mount table has not been modified. If yes, than re-read it
+ * (with some limitations to avoid never ending loop).
+ *
+ * Returns: <0 error, 0 success, 1 too many attempts
+ */
+int mnt_read_procfs_file(int fd, char **buf, size_t *bufsiz)
+{
+	size_t bufmax = 0;
+	int rc = 0, tries = 0;
+	char *bufptr;
+
+	assert(buf);
+	assert(bufsiz);
+
+	*bufsiz = 0;
+
+	do {
+		ssize_t ret;
+
+		if (bufmax == *bufsiz) {
+			char *tmp;
+
+			bufmax = bufmax ? bufmax * 2 : (16 * 1024);
+
+			tmp = realloc(*buf, bufmax);
+			if (!tmp)
+				break;
+			*buf = tmp;
+			bufptr = tmp + *bufsiz;
+		}
+
+		errno = 0;
+		ret = read(fd, bufptr, bufmax);
+
+		if (ret < 0) {
+			/* error */
+			if (errno == EAGAIN || errno == EINTR) {
+				xusleep(250000);
+				tries++;
+				continue;
+			}
+			break;
+
+		} else if (ret > 0) {
+			/* success -- verify no event during read */
+			struct pollfd fds[] = {
+				{ .fd = fd, .events = POLLPRI }
+			};
+
+			rc = poll(fds, 1, 0);
+			if (rc < 0)
+				break;		/* poll() error */
+			if (rc > 0) {
+				/* event -- read all again */
+				if (lseek(fd, 0, SEEK_SET) != 0)
+					break;
+				*bufsiz = 0;
+				bufptr = *buf;
+				tries++;
+				continue;
+			}
+
+			/* successful read() without active poll() */
+			*bufsiz += (size_t) ret;
+			bufptr += ret;
+			tries = 0;
+		} else {
+			/* end-of-file */
+			goto success;
+		}
+	} while (tries <= 5);
+
+	rc = errno ? -errno : 1;
+	free(*buf);
+	return rc;
+
+success:
+	return 0;
+}
+
 
 #ifdef TEST_PROGRAM
+static int test_proc_read(struct libmnt_test *ts, int argc, char *argv[])
+{
+	char *buf = NULL;
+	char *filename = argv[1];
+	size_t bufsiz = 0;
+	int rc = 0, fd = open(filename, O_RDONLY);
+
+	if (fd <= 0) {
+		warn("%s: cannot open", filename);
+		return -errno;
+	}
+
+	rc = mnt_read_procfs_file(fd, &buf, &bufsiz);
+	close(fd);
+
+	switch (rc) {
+	case 0:
+		fwrite(buf, 1, bufsiz, stdout);
+		break;
+	case 1:
+		warnx("too many attempts");
+		break;
+	default:
+		warn("%s: cannot read", filename);
+		break;
+	}
+
+	return rc;
+}
+
 static int test_match_fstype(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *type = argv[1];
@@ -1323,6 +1439,7 @@ int main(int argc, char *argv[])
 	{ "--guess-root",    test_guess_root,      "[<maj:min>]" },
 	{ "--mkdir",         test_mkdir,           "<path>" },
 	{ "--statfs-type",   test_statfs_type,     "<path>" },
+	{ "--read-procfs",   test_proc_read,       "<path>" },
 
 	{ NULL }
 	};
