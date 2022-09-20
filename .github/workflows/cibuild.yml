@@ -37,6 +37,35 @@ jobs:
         run: sudo -E .github/workflows/cibuild.sh CHECK
       - name: Make install
         run: .github/workflows/cibuild.sh INSTALL
+  build-s390x:
+    runs-on: fedora-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - { COMPILER: "gcc",   COMPILER_VERSION: "10", SANITIZE: "yes"  }
+          - { COMPILER: "gcc",   COMPILER_VERSION: "10", SANITIZE: "no"   }
+          - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "yes"  }
+          - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "no"   }
+    env: ${{ matrix.env }}
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@v1
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: s390x
+          distro: fedora_latest
+        #- name: Fedora_setup
+        #  run: sudo -E .github/workflows/cibuild-setup-fedora.sh
+        - name: Configure & Make
+          run: .github/workflows/cibuild.sh CONFIGURE MAKE
+        - name: Check
+          run: sudo -E .github/workflows/cibuild.sh CHECK
+        - name: Make install
+          run: .github/workflows/cibuild.sh INSTALL
+
   coveralls:
     runs-on: ubuntu-latest
     if: github.repository == 'util-linux/util-linux'
