@@ -38,7 +38,7 @@ jobs:
       - name: Make install
         run: .github/workflows/cibuild.sh INSTALL
   build-s390x:
-    runs-on: fedora-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -59,12 +59,12 @@ jobs:
           distro: fedora_latest
         #- name: Fedora_setup
         #  run: sudo -E .github/workflows/cibuild-setup-fedora.sh
-        - name: Configure & Make
-          run: .github/workflows/cibuild.sh CONFIGURE MAKE
-        - name: Check
-          run: sudo -E .github/workflows/cibuild.sh CHECK
-        - name: Make install
-          run: .github/workflows/cibuild.sh INSTALL
+          - name: Configure & Make
+            run: .github/workflows/cibuild.sh CONFIGURE MAKE
+          - name: Check
+            run: sudo -E .github/workflows/cibuild.sh CHECK
+          - name: Make install
+            run: .github/workflows/cibuild.sh INSTALL
 
   coveralls:
     runs-on: ubuntu-latest
