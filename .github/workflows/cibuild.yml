@@ -6,6 +6,7 @@ on:
       - 'lib*/docs/**'
   push:
     branches:
+      - 'fedora-ci'
       - 'cibuild'
       - 'master'
       - 'next'
@@ -61,6 +62,7 @@ jobs:
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
+
 
   coveralls:
     runs-on: ubuntu-latest
