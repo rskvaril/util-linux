@@ -27,13 +27,11 @@ jobs:
             COMPILER: gcc
             COMPILER_VERSION: 10
             SANITIZE: no
-          install:
-            dnf -y update
-            dnf -y install git
           run: |
             pwd
             ls -a
             sudo -E .github/workflows/cibuild-setup-fedora.sh
+            git config --global --add safe.directory $(pwd)
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
