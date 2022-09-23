@@ -57,9 +57,11 @@ jobs:
         with:
           arch: s390x
           distro: fedora_latest
-          env: ${{matrix.env}}
+          env: |
+            ${{matrix.env}}
+          install: |
+             sudo -E .github/workflows/cibuild-setup-fedora.sh
           run: |
-            sudo -E .github/workflows/cibuild-setup-fedora.sh
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
