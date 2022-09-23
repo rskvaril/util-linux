@@ -53,9 +53,13 @@ jobs:
             COMPILER: gcc
             COMPILER_VERSION: 10
             SANITIZE: no
-          install: |
-            sudo -E .github/workflows/cibuild-setup-fedora.sh
+          install:
+            dnf -y update
+            dnf -y install git
           run: |
+            pwd
+            ls
+            sudo -E .github/workflows/cibuild-setup-fedora.sh
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
