@@ -6,6 +6,7 @@ set -ex
 #
 PACKAGES=(
 	dnf-plugins-core
+	git
 )
 
 COMPILER="${COMPILER:?}"
