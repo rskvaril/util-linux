@@ -48,7 +48,6 @@ jobs:
           - { COMPILER: "gcc",   COMPILER_VERSION: "10", SANITIZE: "no"   }
           - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "yes"  }
           - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "no"   }
-    env: ${{ matrix.env }}
     steps:
       - name: Repository checkout
         uses: actions/checkout@v1
@@ -58,7 +57,9 @@ jobs:
         with:
           arch: s390x
           distro: fedora_latest
+          env: ${{matrix.env}}
           run: |
+            sudo -E .github/workflows/cibuild-setup-fedora.sh
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
