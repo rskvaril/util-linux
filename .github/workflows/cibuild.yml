@@ -7,37 +7,12 @@ on:
   push:
     branches:
       - 'fedora-ci'
-      - 'cibuild'
-      - 'master'
-      - 'next'
-      - 'stable/**'
     paths-ignore:
       - 'Documentation/**'
       - 'lib*/docs/**'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        env:
-          - { COMPILER: "gcc",   COMPILER_VERSION: "10", SANITIZE: "yes"  }
-          - { COMPILER: "gcc",   COMPILER_VERSION: "10", SANITIZE: "no"   }
-          - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "yes"  }
-          - { COMPILER: "clang", COMPILER_VERSION: "10", SANITIZE: "no"   }
-    env: ${{ matrix.env }}
-    steps:
-      - name: Repository checkout
-        uses: actions/checkout@v1
-      - name: Ubuntu setup
-        run: sudo -E .github/workflows/cibuild-setup-ubuntu.sh
-      - name: Configure & Make
-        run: .github/workflows/cibuild.sh CONFIGURE MAKE
-      - name: Check
-        run: sudo -E .github/workflows/cibuild.sh CHECK
-      - name: Make install
-        run: .github/workflows/cibuild.sh INSTALL
   build-s390x:
     runs-on: ubuntu-latest
     steps:
@@ -63,58 +38,3 @@ jobs:
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
             .github/workflows/cibuild.sh INSTALL
-
-  coveralls:
-    runs-on: ubuntu-latest
-    if: github.repository == 'util-linux/util-linux'
-    env:
-      COMPILER: gcc
-      COMPILER_VERSION: 10
-      SANITIZE: no
-      COVERAGE: yes
-    steps:
-      - name: Repository checkout
-        uses: actions/checkout@v1
-      - name: Ubuntu setup
-        run: sudo -E .github/workflows/cibuild-setup-ubuntu.sh
-      - name: Configure & Make
-        run: .github/workflows/cibuild.sh CONFIGURE MAKE
-      - name: Check
-        run: sudo -E .github/workflows/cibuild.sh CHECK
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./coverage.info
-  meson:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      COMPILER: gcc
-      COMPILER_VERSION: 10
-      SANITIZE: no
-    steps:
-      - name: Repository checkout
-        uses: actions/checkout@v1
-      - name: Ubuntu setup
-        run: sudo -E .github/workflows/cibuild-setup-ubuntu.sh
-      - name: Meson configure
-        run: .github/workflows/cibuild.sh MESONCONF
-      - name: Meson build
-        run: .github/workflows/cibuild.sh MESONBUILD
-  distcheck:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      COMPILER: gcc
-      COMPILER_VERSION: 10
-      SANITIZE: no
-    steps:
-      - name: Repository checkout
-        uses: actions/checkout@v1
-      - name: Ubuntu setup
-        run: sudo -E .github/workflows/cibuild-setup-ubuntu.sh
-      - name: Configure
-        run: .github/workflows/cibuild.sh CONFIGURE
-      - name: Make distcheck
-        run: .github/workflows/cibuild.sh DISTCHECK

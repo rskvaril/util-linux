@@ -26,6 +26,6 @@ PACKAGES+=("$COMPILER")
 
 
 dnf -y update
-dnf -y build-dep util-linux 
-dnf -y install "${PACKAGES[@]}"
+dnf -y builddep util-linux || true
+dnf -y install "${PACKAGES[@]}" ||true
 
