@@ -12,7 +12,6 @@ on:
       - 'lib*/docs/**'
 
 jobs:
-  build:
   build-s390x:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +32,7 @@ jobs:
             dnf -y install git
           run: |
             pwd
-            ls
+            ls -a
             sudo -E .github/workflows/cibuild-setup-fedora.sh
             .github/workflows/cibuild.sh CONFIGURE MAKE
             sudo -E .github/workflows/cibuild.sh CHECK
